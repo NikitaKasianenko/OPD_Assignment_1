@@ -198,12 +198,10 @@ public:
                 if (arg == 1) {
                     if (!isSeatAvailable(seatNumber)) {
 
-                        for (auto& ticket : tickets) {
-                            string username = ticket.second->get_user_name();
-                            string price = ticket.second->get_price();
-
+                        auto ticket = tickets.find(seatNumber);
+                            string username = ticket->second->get_user_name();
+                            string price = ticket->second->get_price();
                             cout << seatNumber << " " << username << " " << price << endl;
-                        }
 
                     }
 
