@@ -5,6 +5,8 @@
 #include <sstream>
 #include <unordered_map>
 #include <regex>
+#include <cstdlib>
+#include <ctime> 
 
 using namespace std;
 
@@ -61,12 +63,32 @@ class Ticket {
 private:
     string passenger_name;
     string seat_number;
-    bool booked;
     string data;
     string airplane_number;
+    string confirmed_ID;
 public:
     Ticket(string p_n, string s_n, string d, string pl_n)
-        : passenger_name(p_n), seat_number(s_n), data(d), airplane_number(pl_n) {}
+        : passenger_name(p_n), seat_number(s_n), data(d), airplane_number(pl_n) {
+
+        srand((unsigned)time(NULL));  
+        string number;  
+
+        for (int i = 1; i <= 5; i++) {
+            
+            int random = 0 + (rand() % 10);
+
+   
+            number += to_string(random);
+        }
+
+        confirmed_ID = number;
+
+
+    }
+
+    string  ticket_id() {
+        return confirmed_ID;
+    }
 
 
 };
@@ -110,19 +132,27 @@ public:
         return true;
     }
 
-    void bookTicket(const string& username,const string& seatnumber, const string& data,const string& airplane_NO ){
-        //tickets[seatnumber] = new Ticket(username, seatnumber, data, airplane_NO);
+    bool isSeatAvailable(const string& seatNumber) const {
+        for (const auto& ticket : tickets) {
+            if (ticket.first == seatNumber) {
+                return false;
+            }
+        }
+        return true;
+    }
 
-        if (tickets.find(seatnumber) == tickets.end()) {
-            tickets[seatnumber] = new Ticket(username, seatnumber, data, airplane_NO);
-            cout << "Successfully booked seat " << seatnumber << " for " << username << endl;
+
+    void bookTicket(const string& username, const string& seatNumber, const string& date, const string& airplane_NO) {
+        if (tickets.find(seatNumber) == tickets.end()) {
+            tickets[seatNumber] = new Ticket(username, seatNumber, date, airplane_NO);  // Book the seat
+            cout << "Successfully booked seat " << seatNumber << " for " << username << endl;
+            cout << "Confirmed with ID " << tickets[seatNumber]->ticket_id() << endl;
         }
         else {
-            cout << "Seat " << seatnumber << " is already booked." << endl;
+            cout << "Seat " << seatNumber << " is already booked." << endl;
         }
-
-
     }
+
 
     void printAvailableSeats() const {
         size_t dashPos = range.find('-');
@@ -133,12 +163,16 @@ public:
             for (char seat = 'A'; seat < 'A' + seatsPR; ++seat) {
                 string seatNumber = to_string(row) + seat;
 
-                if (tickets.find(seatNumber) == tickets.end()) {
+                if (isSeatAvailable(seatNumber)) {
                     cout << seatNumber << " " << price << "$" << endl;
+                }
+                else {
+                    cout << seatNumber << " - Booked" << endl;
                 }
             }
         }
     }
+
 
 };
 
@@ -146,7 +180,6 @@ class Airplane {
 private:
     string data;
     string airplane_NO;
-    int seats_PR;
     vector<Seats> seats;
 
 public:
@@ -200,6 +233,55 @@ public:
 
 class CLI {
 public:
+    CLI() {
+        FileHandler filehandler;
+        filehandler.read_from_file();
+        auto tokens = filehandler.info();
+        filehandler.print();
+
+        for (auto& row : tokens) {
+            string data = row[0];
+            string airplane_NO = row[1];
+            int seats = atoi(row[2].c_str());
+
+            vector<Seats> seatList;
+
+            for (size_t i = 3; i + 1 < row.size(); i += 2) {
+                string range = row[i];
+                string price = row[i + 1];
+                seatList.emplace_back(seats, range, price);
+            }
+
+            airplanes.emplace_back(data, airplane_NO, seatList);
+        }
+
+        for (const auto& airplane : airplanes) {
+            airplane.print();
+        }
+    };
+
+    void start() {
+        while (1) {
+            auto input = user_input();
+            if (input.empty()) continue;
+
+            string command = input[0];  // Adjust to input[0] as the command should be the first element
+
+            if (command == "check") {
+                check(input, airplanes);
+            }
+            else if (command == "book") {
+                book(input, airplanes);
+            }
+            else if (command == "exit") {
+                break;
+            }
+            else {
+                cout << "Unknown command" << endl;
+            }
+        }
+    }
+
     vector<string> user_input() {
         string line;
         cout << "Input: ";
@@ -220,7 +302,7 @@ public:
         return row;
     }
 
-    void check(const vector<string>& row, vector<Airplane> airplanes) {
+    void check(const vector<string>& row, vector<Airplane>& airplanes) {
         string Date = row[1];
         string FlightNo = row[2];
 
@@ -237,7 +319,7 @@ public:
 
     }
 
-    void book(const vector<string>& row, vector<Airplane> airplanes) {
+    void book(const vector<string>& row, vector<Airplane>& airplanes) {
         string Date = row[1];
         string FlightNo = row[2];
         string place = row[3];
@@ -258,53 +340,19 @@ public:
 
         
     }
+private:
+    vector<Airplane> airplanes;
+
+
 
 
 };
 
 int main() {
-    FileHandler filehandler;
-    filehandler.read_from_file();
-    auto tokens = filehandler.info();
-    filehandler.print();
+
+    
     CLI CLI;
-
-    vector<Airplane> airplanes;
-
-    for (auto& row : tokens) {
-        string data = row[0];
-        string airplane_NO = row[1];
-        int seats = atoi(row[2].c_str());
-
-        vector<Seats> seatList;
-
-        for (size_t i = 3; i + 1 < row.size(); i += 2) {
-            string range = row[i];
-            string price = row[i + 1];
-            seatList.emplace_back(seats, range, price);
-        }
-
-        airplanes.emplace_back(data, airplane_NO, seatList);
-    }
-
-    for (const auto& airplane : airplanes) {
-        airplane.print();
-    }
-
-    CLI.user_input();
-
-   /* string seatNumber;
-    cout << "Enter seat number : ";
-    cin >> seatNumber;
-
-    if (airplanes[0].validateSeat(seatNumber)) {
-        cout << "Seat " << seatNumber << " is valid.\n";
-    }
-    else {
-        cout << "Seat " << seatNumber << " is invalid.\n";
-    }*/
-
-
+    CLI.start();
 
     return 0;
 }
