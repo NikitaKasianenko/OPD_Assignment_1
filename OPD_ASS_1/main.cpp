@@ -66,9 +66,10 @@ private:
     string data;
     string airplane_number;
     string confirmed_ID;
+    string price;
 public:
-    Ticket(string p_n, string s_n, string d, string pl_n)
-        : passenger_name(p_n), seat_number(s_n), data(d), airplane_number(pl_n) {
+    Ticket(string p_n, string s_n, string d, string pl_n, string p)
+        : passenger_name(p_n), seat_number(s_n), data(d), airplane_number(pl_n),price(p) {
 
         srand((unsigned)time(NULL));  
         string number;  
@@ -86,8 +87,16 @@ public:
 
     }
 
-    string  ticket_id() {
+    string  ticket_id() const {
         return confirmed_ID;
+    }
+
+    string get_price() const {
+        return price;
+    }
+
+    string get_user_name() const {
+        return passenger_name;
     }
 
 
@@ -144,7 +153,7 @@ public:
 
     void bookTicket(const string& username, const string& seatNumber, const string& date, const string& airplane_NO) {
         if (tickets.find(seatNumber) == tickets.end()) {
-            tickets[seatNumber] = new Ticket(username, seatNumber, date, airplane_NO);  // Book the seat
+            tickets[seatNumber] = new Ticket(username, seatNumber, date, airplane_NO, price); 
             cout << "Successfully booked seat " << seatNumber << " for " << username << endl;
             cout << "Confirmed with ID " << tickets[seatNumber]->ticket_id() << endl;
         }
@@ -164,7 +173,7 @@ public:
                 string seatNumber = to_string(row) + seat;
 
                 if (isSeatAvailable(seatNumber)) {
-                    cout << seatNumber << " " << price << "$" << endl;
+                    cout << seatNumber << " " << price << endl;
                 }
                 else {
                     cout << seatNumber << " - Booked" << endl;
@@ -172,6 +181,18 @@ public:
             }
         }
     }
+
+    bool return_ticket(const string& ID) {
+        for (auto iter = tickets.begin(); iter != tickets.end(); ++iter) {
+            if (iter->second->ticket_id() == ID) {
+                cout << "Refund " << iter->second->get_price() << " for " << iter->second->get_user_name() << endl;
+                tickets.erase(iter);
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 
 };
@@ -229,6 +250,21 @@ public:
         }
     }
 
+    bool returnTicket (const string& ID){
+        for (auto& seat : seats) {
+            if (seat.return_ticket(ID)) {
+                return true;
+            }
+        }
+        return false;
+
+
+    }
+
+    vector<Seats> Seats(){
+        return seats;
+    }
+
 };
 
 class CLI {
@@ -272,6 +308,9 @@ public:
             }
             else if (command == "book") {
                 book(input, airplanes);
+            }
+            else if (command == "return") {
+                return_f(input, airplanes);
             }
             else if (command == "exit") {
                 break;
@@ -337,9 +376,24 @@ public:
             cout << "No avalible places for the filght with such parameters" << endl;
         }
 
-
-        
     }
+
+    void return_f(const vector<string>& row, vector<Airplane>& airplanes) {
+        string ID = row[1];
+        bool find_ticket = false;
+
+        for (auto& airplane : airplanes) {
+            if (airplane.returnTicket(ID)) {
+                find_ticket = true;
+                break;
+            }
+        }
+
+        if (!find_ticket) {
+            cout << "No ticket with such ID" << endl;
+        }
+    }
+
 private:
     vector<Airplane> airplanes;
 
