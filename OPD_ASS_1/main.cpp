@@ -99,6 +99,18 @@ public:
         return passenger_name;
     }
 
+    string get_airplane() const {
+        return airplane_number;
+    }
+
+    string get_data() const {
+        return data;
+    }
+
+    string get_seat() const {
+        return seat_number;
+    }
+
 
 };
 
@@ -163,7 +175,7 @@ public:
     }
 
 
-    void printAvailableSeats() const {
+    void printAvailableSeats(int& arg) const {
         size_t dashPos = range.find('-');
         int startRow = stoi(range.substr(0, dashPos));
         int endRow = stoi(range.substr(dashPos + 1));
@@ -172,15 +184,35 @@ public:
             for (char seat = 'A'; seat < 'A' + seatsPR; ++seat) {
                 string seatNumber = to_string(row) + seat;
 
-                if (isSeatAvailable(seatNumber)) {
-                    cout << seatNumber << " " << price << endl;
+                if (arg == 0) {
+
+
+                    if (isSeatAvailable(seatNumber)) {
+                        cout << seatNumber << " " << price << endl;
+                    }
+                    else {
+                        cout << seatNumber << " - Booked" << endl;
+                    }
                 }
-                else {
-                    cout << seatNumber << " - Booked" << endl;
+
+                if (arg == 1) {
+                    if (!isSeatAvailable(seatNumber)) {
+
+                        for (auto& ticket : tickets) {
+                            string username = ticket.second->get_user_name();
+                            string price = ticket.second->get_price();
+
+                            cout << seatNumber << " " << username << " " << price << endl;
+                        }
+
+                    }
+
                 }
             }
         }
     }
+
+
 
     bool return_ticket(const string& ID) {
         for (auto iter = tickets.begin(); iter != tickets.end(); ++iter) {
@@ -190,6 +222,49 @@ public:
                 return true;
             }
         }
+        return false;
+    }
+
+    bool view_ticket(const string& ID) {
+        if (!ID.empty() && std::all_of(ID.begin(), ID.end(), ::isdigit)){
+
+            for (auto iter = tickets.begin(); iter != tickets.end(); ++iter) {
+                if (iter->second->ticket_id() == ID) {
+                    cout << "Flight " << iter->second->get_airplane() << " , " << iter->second->get_data() << ", seat "
+                        << iter->second->get_seat() << " price " << iter->second->get_price() << endl;
+
+                    return true;
+                }
+            }
+        }
+        else {
+
+
+            bool finded = false;
+            int counter = 1;
+
+            for (auto iter = tickets.begin(); iter != tickets.end(); ++iter) {
+
+                if (iter->second->get_user_name() == ID) {
+
+                    cout << counter<<". Flight " << iter->second->get_airplane() << ", " << iter->second->get_data() << ", seat "
+                        << iter->second->get_seat() << " price " << iter->second->get_price() << endl;
+                    counter++;
+                    finded = true;
+
+                }
+            }
+            if (finded) {
+                return true;
+
+            }
+
+
+        }
+
+
+        
+      
         return false;
     }
 
@@ -244,15 +319,26 @@ public:
         cout << "Invalid seat number for this flight." << endl;
     }
 
-    void printAvailableSeats() const {
+    void printAvailableSeats(int& arg) const {
         for (const auto& seat : seats) {
-            seat.printAvailableSeats();  
+            seat.printAvailableSeats(arg);  
         }
     }
 
     bool returnTicket (const string& ID){
         for (auto& seat : seats) {
             if (seat.return_ticket(ID)) {
+                return true;
+            }
+        }
+        return false;
+
+
+    }
+
+    bool viewTicket(const string& ID) {
+        for (auto& seat : seats) {
+            if (seat.view_ticket(ID)) {
                 return true;
             }
         }
@@ -301,7 +387,7 @@ public:
             auto input = user_input();
             if (input.empty()) continue;
 
-            string command = input[0];  // Adjust to input[0] as the command should be the first element
+            string command = input[0]; 
 
             if (command == "check") {
                 check(input, airplanes);
@@ -311,6 +397,10 @@ public:
             }
             else if (command == "return") {
                 return_f(input, airplanes);
+            }
+            else if (command == "view") {
+
+                view(input, airplanes);
             }
             else if (command == "exit") {
                 break;
@@ -344,11 +434,12 @@ public:
     void check(const vector<string>& row, vector<Airplane>& airplanes) {
         string Date = row[1];
         string FlightNo = row[2];
+        int arg = 0;
 
         bool find_airplane = false;
         for (const auto& airplane : airplanes) {
             if (Date == airplane.getData() && FlightNo == airplane.getAirplane_NO()) {
-                airplane.printAvailableSeats();
+                airplane.printAvailableSeats(arg);
                 find_airplane = true;
             }
         }
@@ -394,17 +485,80 @@ public:
         }
     }
 
+    bool is_number(const std::string& s) {
+        return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
+    }
+
+    void view(const vector<string>& row, vector<Airplane>& airplanes) {
+
+        string arg = row[1];
+            if (is_number(arg)) {
+
+                string ID = arg;
+                bool find_ticket = false;
+
+                for (auto& airplane : airplanes) {
+                    if (airplane.viewTicket(ID)) {
+                        find_ticket = true;
+                        break;
+                    }
+                }
+
+                if (!find_ticket) {
+                    cout << "No ticket with such ID" << endl;
+                }
+
+            }
+
+            if (arg == "username") {
+
+                string username = row[2];
+                bool find_ticket = false;
+
+                for (auto& airplane : airplanes) {
+                    if (airplane.viewTicket(username)) {
+                        find_ticket = true;
+                        break;
+                    }
+                }
+
+                if (!find_ticket) {
+                    cout << "No user with such name" << endl;
+                }
+
+
+            }
+
+            if (arg == "flight") {
+
+                string Date = row[3];
+                string FlightNO = row[2];
+                int arg = 1;
+
+                bool find_airplane = false;
+                for (const auto& airplane : airplanes) {
+                    if (Date == airplane.getData() && FlightNO == airplane.getAirplane_NO()) {
+                        airplane.printAvailableSeats(arg);
+                        find_airplane = true;
+                    }
+                }
+                if (!find_airplane) {
+                    cout << "No avalible places for the filght with such parameters" << endl;
+                }
+
+
+            }
+
+
+    }
+
 private:
     vector<Airplane> airplanes;
-
-
-
 
 };
 
 int main() {
 
-    
     CLI CLI;
     CLI.start();
 
