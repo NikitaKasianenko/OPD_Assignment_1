@@ -17,6 +17,7 @@ public:
 
         cout << "Enter path to file: ";
         getline(cin, input);
+        cout << endl;
 
 
         ifstream input_stream(input);
@@ -25,7 +26,10 @@ public:
             return;
         }
 
+
         string line;
+        //getline(input_stream, line);
+
         while (getline(input_stream, line)) {
             stringstream ss(line);
             string token;
@@ -357,7 +361,6 @@ public:
         FileHandler filehandler;
         filehandler.read_from_file();
         auto tokens = filehandler.info();
-        filehandler.print();
 
         for (auto& row : tokens) {
             string data = row[0];
@@ -430,6 +433,12 @@ public:
     }
 
     void check(const vector<string>& row, vector<Airplane>& airplanes) {
+
+        if (row.size() != 3) {
+            cout << "Incorrect input" << endl;
+            return;
+        }
+
         string Date = row[1];
         string FlightNo = row[2];
         int arg = 0;
@@ -448,6 +457,12 @@ public:
     }
 
     void book(const vector<string>& row, vector<Airplane>& airplanes) {
+
+        if (row.size() != 5) {
+            cout << "Incorrect input" << endl;
+            return;
+        }
+
         string Date = row[1];
         string FlightNo = row[2];
         string place = row[3];
@@ -468,6 +483,12 @@ public:
     }
 
     void return_f(const vector<string>& row, vector<Airplane>& airplanes) {
+
+        if (row.size() != 2 || !is_number(row[1])) {
+            cout << "Incorrect input" << endl;
+            return;
+        }
+
         string ID = row[1];
         bool find_ticket = false;
 
@@ -492,6 +513,11 @@ public:
         string arg = row[1];
             if (is_number(arg)) {
 
+                if (row.size() != 2) {
+                    cout << "Incorrect input" << endl;
+                    return;
+                }
+
                 string ID = arg;
                 bool find_ticket = false;
 
@@ -509,6 +535,11 @@ public:
             }
 
             if (arg == "username") {
+
+                if (row.size() != 3) {
+                    cout << "Incorrect input" << endl;
+                    return;
+                }
 
                 string username = row[2];
                 bool find_ticket = false;
@@ -529,6 +560,11 @@ public:
 
             if (arg == "flight") {
 
+                if (row.size() != 4) {
+                    cout << "Incorrect input" << endl;
+                    return;
+                }
+
                 string Date = row[3];
                 string FlightNO = row[2];
                 int arg = 1;
@@ -541,11 +577,13 @@ public:
                     }
                 }
                 if (!find_airplane) {
-                    cout << "No avalible places for the filght with such parameters" << endl;
+                    cout << "No available places for the flight with such parameters" << endl;
                 }
 
 
             }
+
+           
 
 
     }
